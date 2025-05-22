@@ -293,7 +293,7 @@
 
                 // Add delay between sends
                 if ($currentBroker < $totalBrokers) {
-                    sleep(7);
+                    sleep(0.1);
                 }
             }
 
@@ -311,21 +311,35 @@
     }
     ?>
 
+    <?php if ($success): ?>
+        <div class="success">
+            <p>Your data deletion request has been sent successfully to all data brokers.</p>
+            <?php if (!empty($results['failed'])): ?>
+                <p>Note: Some emails failed to send. Failed recipients: <?php echo count($results['failed']); ?> out of <?php echo count($dataBrokerEmails); ?></p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <?php if (!empty($errors)): ?>
         <div class="error">
             <?php foreach ($errors as $error): ?>
                 <p><?php echo htmlspecialchars($error); ?></p>
             <?php endforeach; ?>
+            <?php if (!empty($results['success'])): ?>
+                <p>Successfully sent to <?php echo count($results['success']); ?> data brokers.</p>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
-    <?php if ($success): ?>
-        <div class="success">
-            <p>Your data deletion request has been sent successfully to all data brokers.</p>
+    <form method="POST" action="" id="deletionForm">
+        <!-- Add a hidden progress div -->
+        <div id="progress" style="display: none; margin: 20px 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+            <p>Sending requests... <span id="progressCount">0</span>/<?php echo count($dataBrokerEmails); ?></p>
+            <div style="width: 100%; background: #ddd; border-radius: 4px;">
+                <div id="progressBar" style="width: 0%; height: 20px; background: #4CAF50; border-radius: 4px; transition: width 0.1s;"></div>
+            </div>
         </div>
-    <?php endif; ?>
 
-    <form method="POST" action="">
         <div class="form-group">
             <label for="name">Full Name:</label>
             <input type="text" id="name" name="name" required 
@@ -349,7 +363,36 @@
                    value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>">
         </div>
 
-        <button type="submit">Submit Request</button>
+        <button type="submit" id="submitButton">Submit Request</button>
     </form>
+
+    <script>
+    document.getElementById('deletionForm').onsubmit = function() {
+        var progress = document.getElementById('progress');
+        var progressBar = document.getElementById('progressBar');
+        var progressCount = document.getElementById('progressCount');
+        var submitButton = document.getElementById('submitButton');
+        
+        // Show progress and disable submit button
+        progress.style.display = 'block';
+        submitButton.disabled = true;
+        submitButton.textContent = 'Sending...';
+        
+        // Start progress updates
+        var total = <?php echo count($dataBrokerEmails); ?>;
+        var current = 0;
+        
+        var progressInterval = setInterval(function() {
+            current++;
+            var percent = (current / total) * 100;
+            progressBar.style.width = percent + '%';
+            progressCount.textContent = current;
+            
+            if (current >= total) {
+                clearInterval(progressInterval);
+            }
+        }, 100); // Update every 100ms
+    };
+    </script>
 </body>
 </html>
