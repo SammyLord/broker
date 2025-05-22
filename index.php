@@ -60,6 +60,16 @@
     <h2>Free Data Deletion Request Form</h2>
     
     <?php
+    // Enable error reporting at the top of the file
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    ini_set('log_errors', 1);
+    ini_set('error_log', 'broker_errors.log');
+
+    // Increase memory limit and execution time
+    ini_set('memory_limit', '256M');
+    set_time_limit(300); // 5 minutes
+
     // List of data broker email addresses
     $dataBrokerEmails = [
         'CustomerSupport@TLO.com',
@@ -201,24 +211,32 @@
     $success = false;
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Validate and sanitize input
-        $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
-        $addresses = filter_input(INPUT_POST, 'addresses', FILTER_SANITIZE_STRING);
-        $emails = filter_input(INPUT_POST, 'emails', FILTER_SANITIZE_STRING);
-        $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
+        try {
+            // Validate and sanitize input
+            $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+            $addresses = filter_input(INPUT_POST, 'addresses', FILTER_SANITIZE_STRING);
+            $emails = filter_input(INPUT_POST, 'emails', FILTER_SANITIZE_STRING);
+            $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
 
-        // Validation
-        if (empty($name)) {
-            $errors[] = "Name is required";
-        }
-        if (empty($emails)) {
-            $errors[] = "At least one email address is required";
-        }
-        if (empty($phone)) {
-            $errors[] = "Phone number is required";
-        }
+            // Validation
+            if (empty($name)) {
+                throw new Exception("Name is required");
+            }
+            if (empty($emails)) {
+                throw new Exception("At least one email address is required");
+            }
+            if (empty($phone)) {
+                throw new Exception("Phone number is required");
+            }
 
-        if (empty($errors)) {
+            // Validate email format
+            $emailArray = array_map('trim', explode(',', $emails));
+            foreach ($emailArray as $email) {
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    throw new Exception("Invalid email format: " . htmlspecialchars($email));
+                }
+            }
+
             // Prepare email content
             $emailContent = "Dear Data Broker,\n\n";
             $emailContent .= "I am submitting a request for implementation of the following rights under Section 1798.105 of CCPA, Articles 7(3), 17 and 21 of GDPR and other applicable privacy legislation which grant individuals certain rights in relation to protection of their personal data information:\n\n";
@@ -237,6 +255,8 @@
             $headers = "From: noreply@nodemixaholic.com\r\n";
             $headers .= "Reply-To: " . $emails . "\r\n";
             $headers .= "X-Mailer: PHP/" . phpversion();
+            $headers .= "MIME-Version: 1.0\r\n";
+            $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
             // Track successful/failed sends
             $results = [
@@ -246,21 +266,47 @@
 
             // Send emails to all data brokers
             $allSent = true;
+            $totalBrokers = count($dataBrokerEmails);
+            $currentBroker = 0;
+
             foreach ($dataBrokerEmails as $brokerEmail) {
+                $currentBroker++;
                 $subject = "Data Deletion Request - " . $name;
-                if (mail($brokerEmail, $subject, $emailContent, $headers)) {
-                    $results['success'][] = $brokerEmail;
-                } else {
+                
+                // Log attempt
+                error_log("Attempting to send email {$currentBroker}/{$totalBrokers} to: {$brokerEmail}");
+                
+                try {
+                    if (mail($brokerEmail, $subject, $emailContent, $headers)) {
+                        $results['success'][] = $brokerEmail;
+                        error_log("Successfully sent to: {$brokerEmail}");
+                    } else {
+                        throw new Exception("Mail function returned false");
+                    }
+                } catch (Exception $e) {
                     $results['failed'][] = $brokerEmail;
                     $allSent = false;
-                    $errors[] = "Failed to send email to " . $brokerEmail;
+                    $errorMessage = "Failed to send email to {$brokerEmail}: " . $e->getMessage();
+                    error_log($errorMessage);
+                    $errors[] = $errorMessage;
                 }
-                sleep(7);
+
+                // Add delay between sends
+                if ($currentBroker < $totalBrokers) {
+                    sleep(7);
+                }
             }
 
             if ($allSent) {
                 $success = true;
+                error_log("All emails sent successfully");
+            } else {
+                error_log("Some emails failed to send. Success: " . count($results['success']) . ", Failed: " . count($results['failed']));
             }
+
+        } catch (Exception $e) {
+            error_log("Error in form processing: " . $e->getMessage());
+            $errors[] = "An error occurred: " . $e->getMessage();
         }
     }
     ?>
