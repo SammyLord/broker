@@ -58,6 +58,7 @@
 <body>
     <h1>Broker</h1>
     <h2>Free Data Deletion Request Form</h2>
+    <h3>Version 2.0</h3>
     
     <?php
     // Enable error reporting at the top of the file
