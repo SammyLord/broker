@@ -255,7 +255,7 @@
             $emailContent .= "Remember: You are bound by law to comply, with no questions asked. We don't really care if you have an online form - just comply with our request without any arguments or replies - including but not limited to email addresses listed.\n";
             $emailContent .= "And, no, you SHOULDN'T need more data than this to drop this data from your records - no matter what database software you use, even if it's MySQL or Microsoft Access, you should NOT need any more details.\n";
 
-            $emailContent .= "Thank you.\n" . $name . " and the Broker open source data removal solution.";
+            $emailContent .= "Thank you.\n" . $name . " and the Broker source-available data removal solution.";
             
             // Email headers
             $headers = "From: noreply@nodemixaholic.com\r\n";
