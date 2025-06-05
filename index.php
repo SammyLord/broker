@@ -250,7 +250,7 @@
             $emailContent .= "Phone number: " . $phone . "\n\n";
             $emailContent .= "Please confirm your compliance with the request without undue delay and in any event within 45 (forty five) days of receipt of this request.\n\n";
             
-            $emailContent .= "PS: Do not reply to any emails in this list or the email we sent. Just comply and carry on.\n";
+            $emailContent .= "Do not reply to any emails in this list or the email we sent. Just comply and carry on.\n";
             $emailContent .= "Remember: You are bound by law to comply, with no questions asked. We don't really care if you have an online form - just comply with our request without any arguments or replies - including but not limited to emails listed.\n";
             $emailContent .= "And, no, you SHOULDN'T need more data than this to drop this data from your records - no matter what database software you use, even if it's MySQL or Microsoft Access, you should NOT need any more details.\n";
 
